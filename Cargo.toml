@@ -1,0 +1,55 @@
+[workspace]
+members = [".", "sys"]
+resolver = "2"
+
+[workspace.package]
+authors = ["Ho Kim <ho.kim@ulagbulag.io>"]
+description = "Unofficial Rust Bindings of GTSAM"
+documentation = "https://docs.rs/gtsam"
+edition = "2021"
+include = ["src/**/*.rs", "Cargo.toml"]
+keywords = ["optimization", "rtsam", "slam"]
+license = "AGPL-3.0-or-later"
+readme = "./README.md"
+rust-version = "1.75"
+homepage = "https://github.com/ulagbulag/gtsam-rs"
+repository = "https://github.com/ulagbulag/gtsam-rs"
+version = "0.1.0"
+
+[workspace.dependencies]
+anyhow = { version = "1.0", features = ["backtrace"] }
+cmake = { version = "0.1" }
+cxx = { version = "1.0" }
+cxx-build = { version = "1.0" }
+flate2 = { version = "1.0" }
+glob = { version = "0.3" }
+nalgebra = { version = "0.32" }
+ndarray = { version = "0.15" }
+pkg-config = { version = "0.3" }
+reqwest = { version = "0.11" }
+tar = { version = "0.4" }
+
+[package]
+name = "gtsam"
+
+authors = { workspace = true }
+description = { workspace = true }
+documentation = { workspace = true }
+edition = { workspace = true }
+include = { workspace = true }
+keywords = { workspace = true }
+license = { workspace = true }
+readme = { workspace = true }
+rust-version = { workspace = true }
+homepage = { workspace = true }
+repository = { workspace = true }
+version = { workspace = true }
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+gtsam-sys = { path = "sys" }
+
+anyhow = { workspace = true }
+cxx = { workspace = true }
+nalgebra = { workspace = true }
