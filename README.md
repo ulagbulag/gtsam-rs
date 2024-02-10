@@ -5,8 +5,8 @@ An unofficial `GTSAM` Rust bindings.
 ## Dependencies
 
 - boost
-- Eigen
-- metis
+- Eigen (optional: required on `build-use-system-libs` feature enabled)
+- metis (optional: required on `build-use-system-libs` feature enabled)
 
 ### Install on ArchLinux
 
