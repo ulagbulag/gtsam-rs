@@ -65,6 +65,9 @@ fn main() {
         .into(),
         &cov_noise,
     );
+
+    // Add loop closure factors
+    let loop_noise = cov_noise;
     graph.add_between_factor_pose3(
         5,
         2,
@@ -73,7 +76,7 @@ fn main() {
             Vector3::new(0.0, -f64::consts::PI / 2.0, 0.0),
         )
         .into(),
-        &cov_noise,
+        &loop_noise,
     );
 
     let mut initials = Values::default();
