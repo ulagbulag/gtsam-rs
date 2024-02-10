@@ -2,6 +2,11 @@
 
 An unofficial `GTSAM` Rust bindings.
 
+## Supported Features
+
+* LevenbergMarquardtOptimizer
+    - for 3D Pose Estimation (`examples/simple_pose_estimation_3d.rs`)
+
 ## Dependencies
 
 - boost
