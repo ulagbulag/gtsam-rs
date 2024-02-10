@@ -19,15 +19,12 @@ version = "4.2.0"
 build = "build.rs"
 links = "gtsam-rs-sys"
 
-[lib]
-doctest = false
-
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [features]
-default = ["build", "build-use-system-libs", "build-use-tbb"]
+default = ["build"]
 
-build = ["cmake", "download"]
+build = ["cmake"]
 build-use-mkl = ["build"]
 build-use-openmp = ["build", "link-openmp"]
 build-use-system-eigen = ["build"]
@@ -35,7 +32,7 @@ build-use-system-metis = ["build", "link-metis"]
 build-use-system-libs = ["build-use-system-eigen", "build-use-system-metis"]
 build-use-tbb = ["build", "link-tbb"]
 
-download = ["flate2", "reqwest", "tar"]
+download = ["build", "flate2", "reqwest", "tar"]
 
 link-all = ["link-metis", "link-tbb"]
 link-metis = []
@@ -46,6 +43,7 @@ link-tbb = []
 cmake = { workspace = true, optional = true }
 cxx-build = { workspace = true }
 flate2 = { workspace = true, optional = true }
+fs_extra = { workspace = true }
 glob = { workspace = true }
 reqwest = { workspace = true, optional = true, features = ["blocking"] }
 tar = { workspace = true, optional = true }

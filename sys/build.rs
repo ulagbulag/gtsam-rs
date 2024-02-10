@@ -26,7 +26,7 @@ struct Repository {
     path: PathBuf,
 }
 
-#[cfg(feature = "build")]
+#[cfg(feature = "download")]
 impl Repository {
     // Configure
     const URL: &'static str = concat!(
@@ -62,6 +62,24 @@ impl Default for Repository {
                 .expect("failed to unpack source codes");
 
             path.push(format!("gtsam-{version}", version = Self::VERSION));
+        }
+        Self { path }
+    }
+
+    #[cfg(not(feature = "download"))]
+    fn default() -> Self {
+        let src_dir = format!("{}/3rd/gtsam", env!("CARGO_MANIFEST_DIR"));
+        let dst_dir = get_out_dir();
+
+        let path = {
+            let mut path = dst_dir.clone();
+            path.push("gtsam");
+            path
+        };
+
+        let options = ::fs_extra::dir::CopyOptions::default();
+        if !path.exists() {
+            ::fs_extra::dir::copy(src_dir, dst_dir, &options).expect("failed to copy source files");
         }
         Self { path }
     }

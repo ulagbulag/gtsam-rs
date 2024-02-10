@@ -1,4 +1,4 @@
 [submodule "gtsam"]
-path = sys/gtsam
+path = sys/3rd/gtsam
 url = git@github.com:borglab/gtsam.git
-branch = 4.2.0
+branch = 4.2
