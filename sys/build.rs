@@ -45,6 +45,7 @@ impl Repository {
 
 #[cfg(feature = "build")]
 impl Default for Repository {
+    #[cfg(feature = "download")]
     fn default() -> Self {
         // Configure
         let mut path = get_out_dir();
@@ -92,6 +93,10 @@ impl Repository {
 
         let mut builder = ::cmake::Config::new(&self.path);
         builder
+            // NOTE: original GTSAM shows many warnings, ignoring them...
+            .build_arg("-Wdeprecated-copy")
+            .build_arg("-Wdeprecated-declarations")
+            .build_arg("-Wunused-parameter")
             .define("BUILD_SHARED_LIBS", false.to_bool())
             .define("DEBUG", false.to_bool())
             .define("GDB", false.to_bool())
@@ -119,31 +124,30 @@ impl Repository {
             .define("PCRE", false.to_bool())
             .profile("Release");
 
-        // Assert to use bundled sub-packages
-        {
-            let use_system_eigen = USE_SYSTEM_EIGEN.to_bool();
-            let use_system_metis = USE_SYSTEM_METIS.to_bool();
-
-            builder
-                .define("GTSAM_BUILD_UNSTABLE", false.to_bool())
-                .define("GTSAM_USE_SYSTEM_EIGEN", use_system_eigen)
-                .define("GTSAM_USE_SYSTEM_METIS", use_system_metis);
-        }
-
         // Configure Accelerators
         {
-            let use_mkl = cfg!(feature = "build-use-mkl").to_bool();
-            let use_tbb = cfg!(feature = "build-use-tbb").to_bool();
+            let use_mkl = cfg!(feature = "build-use-mkl");
+            let use_openmp = cfg!(feature = "build-use-openmp");
+            let use_tbb = cfg!(feature = "build-use-tbb");
 
             builder
-                .define("GTSAM_WITH_EIGEN_MKL", use_mkl)
-                .define("GTSAM_WITH_EIGEN_MKL_OPENMP", use_mkl)
-                .define("GTSAM_WITH_TBB", use_mkl)
-                .define("OPENMP", use_tbb);
+                .define("GTSAM_WITH_EIGEN_MKL", use_mkl.to_bool())
+                .define(
+                    "GTSAM_WITH_EIGEN_MKL_OPENMP",
+                    (use_mkl && use_openmp).to_bool(),
+                )
+                .define("GTSAM_WITH_TBB", use_tbb.to_bool())
+                .define("OPENMP", use_openmp.to_bool());
         }
 
         // Configure Options
         builder.define("GTSAM_SLOW_BUT_CORRECT_BETWEENFACTOR", false.to_bool());
+
+        // Configure Sub-packages
+        builder
+            .define("GTSAM_BUILD_UNSTABLE", false.to_bool())
+            .define("GTSAM_USE_SYSTEM_EIGEN", USE_SYSTEM_EIGEN.to_bool())
+            .define("GTSAM_USE_SYSTEM_METIS", USE_SYSTEM_METIS.to_bool());
 
         // Build
         builder.build();
@@ -161,7 +165,12 @@ struct Library {
 }
 
 impl Library {
-    const EXTERNAL_STATIC_LIBS: &'static [&'static str] = &["boost_chrono", "boost_timer", "gtsam"];
+    const EXTERNAL_STATIC_LIBS: &'static [&'static str] = &[
+        "boost_chrono",
+        "boost_serialization",
+        "boost_timer",
+        "gtsam",
+    ];
     const EXTERNAL_DYNAMIC_LIBS: &'static [&'static str] = &[
         #[cfg(feature = "link-metis")]
         "metis-gtsam",
@@ -170,6 +179,7 @@ impl Library {
         #[cfg(feature = "link-tbb")]
         "tbbmalloc",
     ];
+
     const PKG_NAME: &'static str = env!("CARGO_PKG_NAME");
 
     #[cfg(unix)]
@@ -185,6 +195,13 @@ impl Library {
             .flat_map(|line| line.split(' ').skip(1))
             .filter_map(|path| PathBuf::from_str(path).ok())
             .collect();
+
+        if dirs.is_empty() {
+            return Err(io::Error::new(
+                io::ErrorKind::Other,
+                "failed to find package",
+            ));
+        }
 
         Ok(Self {
             includes: dirs

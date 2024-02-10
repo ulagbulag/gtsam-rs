@@ -25,17 +25,21 @@ doctest = false
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [features]
-default = ["link-all"]
+default = ["build", "build-use-system-libs", "build-use-tbb"]
 
-build = ["cmake", "flate2", "reqwest", "tar"]
+build = ["cmake", "download"]
 build-use-mkl = ["build"]
+build-use-openmp = ["build", "link-openmp"]
 build-use-system-eigen = ["build"]
 build-use-system-metis = ["build", "link-metis"]
 build-use-system-libs = ["build-use-system-eigen", "build-use-system-metis"]
 build-use-tbb = ["build", "link-tbb"]
 
+download = ["flate2", "reqwest", "tar"]
+
 link-all = ["link-metis", "link-tbb"]
 link-metis = []
+link-openmp = []
 link-tbb = []
 
 [build-dependencies]
