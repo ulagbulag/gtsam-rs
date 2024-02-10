@@ -1,25 +1,10 @@
-use std::{env, path::PathBuf};
+use std::{env, io, path::PathBuf};
 
 use glob::glob;
 
-#[cfg(unix)]
-fn find_include_dirs(name: &str) -> Vec<PathBuf> {
-    use std::{process::Command, str::FromStr};
-
-    let output = Command::new("whereis")
-        .arg(name)
-        .output()
-        .expect("failed to execute \"whereis\" command");
-
-    let stdout = String::from_utf8(output.stdout).expect("failed to parse whereis stdout");
-    stdout
-        .split('\n')
-        .map(|line| line.trim())
-        .flat_map(|line| line.split(' ').skip(1))
-        .filter(|path| path.contains("/include"))
-        .filter_map(|path| PathBuf::from_str(path).ok())
-        .collect()
-}
+const USE_SYSTEM_EIGEN: bool = !cfg!(feature = "build") || cfg!(feature = "build-use-system-eigen");
+#[cfg(feature = "build")]
+const USE_SYSTEM_METIS: bool = cfg!(feature = "build-use-system-metis");
 
 fn get_target() -> String {
     let triples = env::var("TARGET").expect("failed to get environment variable: TARGET");
@@ -41,6 +26,7 @@ struct Repository {
     path: PathBuf,
 }
 
+#[cfg(feature = "build")]
 impl Repository {
     // Configure
     const URL: &'static str = concat!(
@@ -135,12 +121,13 @@ impl Repository {
 
         // Assert to use bundled sub-packages
         {
-            let use_system_libs = cfg!(feature = "build-use-system-libs").to_bool();
+            let use_system_eigen = USE_SYSTEM_EIGEN.to_bool();
+            let use_system_metis = USE_SYSTEM_METIS.to_bool();
 
             builder
                 .define("GTSAM_BUILD_UNSTABLE", false.to_bool())
-                .define("GTSAM_USE_SYSTEM_EIGEN", use_system_libs)
-                .define("GTSAM_USE_SYSTEM_METIS", use_system_libs);
+                .define("GTSAM_USE_SYSTEM_EIGEN", use_system_eigen)
+                .define("GTSAM_USE_SYSTEM_METIS", use_system_metis);
         }
 
         // Configure Accelerators
@@ -174,18 +161,40 @@ struct Library {
 }
 
 impl Library {
-    const EXTERNAL_LIBS: &'static [&'static str] = &["boost_chrono", "boost_timer", "gtsam"];
+    const EXTERNAL_STATIC_LIBS: &'static [&'static str] = &["boost_chrono", "boost_timer", "gtsam"];
+    const EXTERNAL_DYNAMIC_LIBS: &'static [&'static str] = &[
+        #[cfg(feature = "link-metis")]
+        "metis-gtsam",
+        #[cfg(feature = "link-tbb")]
+        "tbb",
+        #[cfg(feature = "link-tbb")]
+        "tbbmalloc",
+    ];
     const PKG_NAME: &'static str = env!("CARGO_PKG_NAME");
 
-    fn find() -> Result<Self, ::pkg_config::Error> {
-        let library = ::pkg_config::probe_library("gtsam")?;
+    #[cfg(unix)]
+    fn find(name: &str) -> io::Result<Self> {
+        use std::{process::Command, str::FromStr};
+
+        let output = Command::new("whereis").arg(name).output()?;
+
+        let stdout = String::from_utf8(output.stdout).expect("failed to parse whereis stdout");
+        let dirs: Vec<_> = stdout
+            .split('\n')
+            .map(|line| line.trim())
+            .flat_map(|line| line.split(' ').skip(1))
+            .filter_map(|path| PathBuf::from_str(path).ok())
+            .collect();
 
         Ok(Self {
-            includes: library.include_paths,
-            libs: library
-                .libs
+            includes: dirs
+                .iter()
+                .filter(|path| path.iter().any(|name| name == "include"))
+                .cloned()
+                .collect(),
+            libs: dirs
                 .into_iter()
-                .filter_map(|path| path.parse::<PathBuf>().ok())
+                .filter(|path| path.iter().any(|name| name != "include"))
                 .collect(),
         })
     }
@@ -217,24 +226,38 @@ impl Library {
         watch_files(&h_files);
         watch_files(&rs_files);
 
-        ::cxx_build::bridges(rs_files)
+        let mut builder = ::cxx_build::bridges(rs_files);
+        if USE_SYSTEM_EIGEN {
+            builder.includes(
+                Self::find("eigen3")
+                    .expect("failed to find \"eigen3\" library")
+                    .includes,
+            );
+        }
+        builder
             .cpp(true)
             .files(cc_files)
             // NOTE: RAII patterns are available on C++14
             .flag_if_supported("-std=c++14")
             .include(format!("{}/src", env!("CARGO_MANIFEST_DIR")))
             .includes(&self.includes)
-            .includes(find_include_dirs("boost"))
-            .includes(find_include_dirs("eigen3"))
+            .includes(
+                Self::find("boost")
+                    .expect("failed to find \"boost\" library")
+                    .includes,
+            )
             .compile(Self::PKG_NAME);
 
         self.libs.push(get_out_dir())
     }
 
     fn link(&self) {
-        // Link external libraries
-        for lib in Self::EXTERNAL_LIBS {
+        // Link libraries
+        for lib in Self::EXTERNAL_STATIC_LIBS {
             println!("cargo:rustc-link-lib=static={lib}");
+        }
+        for lib in Self::EXTERNAL_DYNAMIC_LIBS {
+            println!("cargo:rustc-link-lib=dylib={lib}");
         }
 
         // Link target-dependent libraries
@@ -262,7 +285,7 @@ fn main() {
     println!("cargo:rerun-if-changed=./build.rs");
     println!("cargo:rerun-if-changed=./Cargo.toml");
 
-    let mut library = match Library::find() {
+    let mut library = match Library::find("gtsam") {
         Ok(library) => library,
         #[cfg(feature = "build")]
         Err(_) => {

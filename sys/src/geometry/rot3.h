@@ -6,6 +6,9 @@
 
 namespace gtsam {
 
-std::unique_ptr<Rot3> new_rot3();
+std::unique_ptr<Rot3> default_rot3();
+
+std::unique_ptr<Rot3> from_rot3_quaternion(double w, double x, double y,
+                                           double z);
 
 } // namespace gtsam

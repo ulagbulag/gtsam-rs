@@ -17,4 +17,5 @@ Cargo.lock
 /.vscode/
 
 # Dev
+/build
 /**/.env
