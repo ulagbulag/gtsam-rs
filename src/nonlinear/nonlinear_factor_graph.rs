@@ -1,7 +1,7 @@
 use cxx::UniquePtr;
 
 use crate::{
-    geometry::pose3::Pose3, inference::symbol::Symbol, linear::noise_model::DiagonalNoiseModel,
+    geometry::pose3::Pose3, inference::key::IntoKey, linear::noise_model::DiagonalNoiseModel,
 };
 
 pub struct NonlinearFactorGraph {
@@ -19,15 +19,15 @@ impl Default for NonlinearFactorGraph {
 impl NonlinearFactorGraph {
     pub fn add_between_factor_pose3(
         &mut self,
-        from: &Symbol,
-        to: &Symbol,
+        from: impl IntoKey,
+        to: impl IntoKey,
         measured: &Pose3,
         model: &DiagonalNoiseModel,
     ) {
         ::sys::nonlinear_factor_graph_add_between_factor_pose3(
             self.inner.pin_mut(),
-            from.key(),
-            to.key(),
+            from.into_key(),
+            to.into_key(),
             &measured.inner,
             &model.to_base_model().inner,
         )
@@ -35,13 +35,13 @@ impl NonlinearFactorGraph {
 
     pub fn add_prior_factor_pose3(
         &mut self,
-        symbol: &Symbol,
+        symbol: impl IntoKey,
         prior: &Pose3,
         model: &DiagonalNoiseModel,
     ) {
         ::sys::nonlinear_factor_graph_add_prior_factor_pose3(
             self.inner.pin_mut(),
-            symbol.key(),
+            symbol.into_key(),
             &prior.inner,
             &model.to_base_model().inner,
         )

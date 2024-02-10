@@ -26,8 +26,8 @@ fn main() {
     let dist = 2.0;
     let cov_noise = DiagonalNoiseModel::from_sigmas(Vector6::new(0.5, 0.5, 0.5, 0.1, 0.1, 0.1));
     graph.add_between_factor_pose3(
-        &Symbol::new(1),
-        &Symbol::new(2),
+        1,
+        2,
         &Isometry3::new(
             Vector3::new(dist, 0.0, 0.0),
             Vector3::new(0.0, -f64::consts::PI / 2.0, 0.0),
@@ -36,8 +36,8 @@ fn main() {
         &cov_noise,
     );
     graph.add_between_factor_pose3(
-        &Symbol::new(2),
-        &Symbol::new(3),
+        2,
+        3,
         &Isometry3::new(
             Vector3::new(dist, 0.0, 0.0),
             Vector3::new(0.0, -f64::consts::PI / 2.0, 0.0),
@@ -46,8 +46,8 @@ fn main() {
         &cov_noise,
     );
     graph.add_between_factor_pose3(
-        &Symbol::new(3),
-        &Symbol::new(4),
+        3,
+        4,
         &Isometry3::new(
             Vector3::new(dist, 0.0, 0.0),
             Vector3::new(0.0, -f64::consts::PI / 2.0, 0.0),
@@ -56,8 +56,8 @@ fn main() {
         &cov_noise,
     );
     graph.add_between_factor_pose3(
-        &Symbol::new(4),
-        &Symbol::new(5),
+        4,
+        5,
         &Isometry3::new(
             Vector3::new(dist, 0.0, 0.0),
             Vector3::new(0.0, -f64::consts::PI / 2.0, 0.0),
@@ -66,8 +66,8 @@ fn main() {
         &cov_noise,
     );
     graph.add_between_factor_pose3(
-        &Symbol::new(5),
-        &Symbol::new(2),
+        5,
+        2,
         &Isometry3::new(
             Vector3::new(dist, 0.0, 0.0),
             Vector3::new(0.0, -f64::consts::PI / 2.0, 0.0),
@@ -78,7 +78,7 @@ fn main() {
 
     let mut initials = Values::default();
     initials.insert_pose3(
-        &Symbol::new(1),
+        1,
         &Isometry3::new(
             Vector3::new(0.0, 0.0, 0.0),
             Vector3::new(0.0, -0.0 * f64::consts::PI / 2.0, 0.0),
@@ -86,7 +86,7 @@ fn main() {
         .into(),
     );
     initials.insert_pose3(
-        &Symbol::new(2),
+        2,
         &Isometry3::new(
             Vector3::new(dist, 0.0, 0.0),
             Vector3::new(0.0, -1.0 * f64::consts::PI / 2.0, 0.0),
@@ -94,7 +94,7 @@ fn main() {
         .into(),
     );
     initials.insert_pose3(
-        &Symbol::new(3),
+        3,
         &Isometry3::new(
             Vector3::new(dist, 0.0, dist),
             Vector3::new(0.0, -2.0 * f64::consts::PI / 2.0, 0.0),
@@ -102,7 +102,7 @@ fn main() {
         .into(),
     );
     initials.insert_pose3(
-        &Symbol::new(4),
+        4,
         &Isometry3::new(
             Vector3::new(0.0, 0.0, dist),
             Vector3::new(0.0, -3.0 * f64::consts::PI / 2.0, 0.0),
@@ -110,7 +110,7 @@ fn main() {
         .into(),
     );
     initials.insert_pose3(
-        &Symbol::new(5),
+        5,
         &Isometry3::new(
             Vector3::new(0.0, 0.0, dist),
             Vector3::new(0.0, -4.0 * f64::consts::PI / 2.0, 0.0),
@@ -125,7 +125,7 @@ fn main() {
 
     let result = opt.optimize_safely();
     for i in 1..=5 {
-        let pose: Isometry3<f64> = result.get_pose3(&Symbol::new(i)).unwrap().into();
+        let pose: Isometry3<f64> = result.get_pose3(i).unwrap().into();
         println!("[{i}] {pose}");
     }
 }

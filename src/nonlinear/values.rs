@@ -2,7 +2,7 @@ use cxx::UniquePtr;
 
 use crate::{
     geometry::pose3::{Pose3, Pose3Ref},
-    inference::symbol::Symbol,
+    inference::key::IntoKey,
 };
 
 pub struct Values {
@@ -18,8 +18,8 @@ impl Default for Values {
 }
 
 impl Values {
-    pub fn insert_pose3(&mut self, key: &Symbol, value: &Pose3) {
-        ::sys::values_insert_pose3(self.inner.pin_mut(), key.key(), &value.inner)
+    pub fn insert_pose3(&mut self, key: impl IntoKey, value: &Pose3) {
+        ::sys::values_insert_pose3(self.inner.pin_mut(), key.into_key(), &value.inner)
     }
 }
 
@@ -28,8 +28,8 @@ pub struct ValuesRef<'a> {
 }
 
 impl<'a> ValuesRef<'a> {
-    pub fn get_pose3(&self, key: &Symbol) -> Option<Pose3Ref> {
-        let key = key.key();
+    pub fn get_pose3(&self, key: impl IntoKey) -> Option<Pose3Ref> {
+        let key = key.into_key();
 
         if ::sys::values_exists(self.inner, key) {
             Some(Pose3Ref {

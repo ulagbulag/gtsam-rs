@@ -22,7 +22,7 @@ links = "gtsam-rs-sys"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [features]
-default = ["build"]
+default = ["build", "build-use-system-libs"]
 
 build = ["cmake"]
 build-use-mkl = ["build"]
