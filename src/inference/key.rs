@@ -4,14 +4,14 @@ use crate::inference::symbol::Symbol;
 
 pub trait IntoKey
 where
-    Self: ToKeySealed,
+    Self: self::sealed::ToKeySealed,
 {
     fn into_key(self) -> Key;
 }
 
 impl<T> IntoKey for &T
 where
-    T: IntoKey,
+    T: Copy + IntoKey,
 {
     fn into_key(self) -> Key {
         <T as IntoKey>::into_key(*self)
@@ -25,7 +25,7 @@ impl IntoKey for u64 {
 }
 
 impl IntoKey for &Symbol {
-    fn into_key(&self) -> Key {
+    fn into_key(self) -> Key {
         self.key()
     }
 }
